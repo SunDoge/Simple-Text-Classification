@@ -8,12 +8,20 @@ import torchtext.vocab as Vocab
 import torch.utils.data as Data
 from tqdm import tqdm, trange
 import time
+import argparse
 
-import sys
-sys.path.append("..")
+parser = argparse.ArgumentParser()
+parser.add_argument('-e', '--experiment-path')
+parser.add_argument('-r', '--resume')
+parser.add_argument('-t', '--test-only', action='store_true')
+args = parser.parse_args()
+
+# import sys
+# sys.path.append("..")
 
 # DATA_ROOT = "\\S1\\CSCL\\tangss\\Datasets"
 DATA_ROOT = 'aclImdb'
+
 
 def read_imdb(folder='train', data_root=DATA_ROOT):  # 本函数已保存在d2lzh_pytorch包中方便以后使用
     data = []
@@ -26,6 +34,7 @@ def read_imdb(folder='train', data_root=DATA_ROOT):  # 本函数已保存在d2lz
     random.shuffle(data)
     return data
 
+
 def get_tokenized_imdb(data):  # 本函数已保存在d2lzh_pytorch包中方便以后使用
     """
     data: list of [string, label]
@@ -34,10 +43,12 @@ def get_tokenized_imdb(data):  # 本函数已保存在d2lzh_pytorch包中方便�
         return [tok.lower() for tok in text.split(' ')]
     return [tokenizer(review) for review, _ in data]
 
+
 def get_vocab_imdb(data):  # 本函数已保存在d2lzh_pytorch包中方便以后使用
     tokenized_data = get_tokenized_imdb(data)
     counter = collections.Counter([tk for st in tokenized_data for tk in st])
     return Vocab.Vocab(counter, min_freq=5)
+
 
 def preprocess_imdb(data, vocab):  # 本函数已保存在d2lzh_torch包中方便以后使用
     max_l = 500  # 将每条评论通过截断或者补0，使得长度变成500
@@ -46,7 +57,8 @@ def preprocess_imdb(data, vocab):  # 本函数已保存在d2lzh_torch包中方�
         return x[:max_l] if len(x) > max_l else x + [0] * (max_l - len(x))
 
     tokenized_data = get_tokenized_imdb(data)
-    features = torch.tensor([pad([vocab.stoi[word] for word in words]) for words in tokenized_data])
+    features = torch.tensor(
+        [pad([vocab.stoi[word] for word in words]) for words in tokenized_data])
     labels = torch.tensor([score for _, score in data])
     return features, labels
 
@@ -61,7 +73,8 @@ class BiRNN(nn.Module):
                                hidden_size=num_hiddens,
                                num_layers=num_layers,
                                bidirectional=True)
-        self.decoder = nn.Linear(4 * num_hiddens, 2)  # 初始时间步和最终时间步的隐藏状态作为全连接层输入
+        # 初始时间步和最终时间步的隐藏状态作为全连接层输入
+        self.decoder = nn.Linear(4 * num_hiddens, 2)
 
     def forward(self, inputs):
         # inputs的形状是(批量大小, 词数)，因为LSTM需要将序列长度(seq_len)作为第一维，所以将输入转置后
@@ -79,8 +92,9 @@ class BiRNN(nn.Module):
 
 def load_pretrained_embedding(words, pretrained_vocab):
     """从预训练好的vocab中提取出words对应的词向量"""
-    embed = torch.zeros(len(words), pretrained_vocab.vectors[0].shape[0]) # 初始化为0
-    oov_count = 0 # out of vocabulary
+    embed = torch.zeros(
+        len(words), pretrained_vocab.vectors[0].shape[0])  # 初始化为0
+    oov_count = 0  # out of vocabulary
     for i, word in enumerate(words):
         try:
             idx = pretrained_vocab.stoi[word]
@@ -91,12 +105,15 @@ def load_pretrained_embedding(words, pretrained_vocab):
         print("There are %d oov words.")
     return embed
 
+
 def predict_sentiment(net, vocab, sentence):
     """sentence是词语的列表"""
     device = list(net.parameters())[0].device
-    sentence = torch.tensor([vocab.stoi[word] for word in sentence], device=device)
+    sentence = torch.tensor([vocab.stoi[word]
+                             for word in sentence], device=device)
     label = torch.argmax(net(sentence.view((1, -1))), dim=1)
     return 'positive' if label.item() == 1 else 'negative'
+
 
 def train(train_iter, test_iter, net, loss, optimizer, device, num_epochs):
     net = net.to(device)
@@ -120,6 +137,7 @@ def train(train_iter, test_iter, net, loss, optimizer, device, num_epochs):
         print('epoch %d, loss %.4f, train acc %.3f, test acc %.3f, time %.1f sec'
               % (epoch + 1, train_l_sum / batch_count, train_acc_sum / n, test_acc, time.time() - start))
 
+
 def evaluate_accuracy(data_iter, net, device=None):
     if device is None and isinstance(net, torch.nn.Module):
         # 如果没指定device就使用net的device
@@ -128,17 +146,20 @@ def evaluate_accuracy(data_iter, net, device=None):
     with torch.no_grad():
         for X, y in tqdm(data_iter):
             if isinstance(net, torch.nn.Module):
-                net.eval() # 评估模式, 这会关闭dropout
-                acc_sum += (net(X.to(device)).argmax(dim=1) == y.to(device)).float().sum().cpu().item()
-                net.train() # 改回训练模式
-            else: # 自定义的模型, 3.13节之后不会用到, 不考虑GPU
-                if('is_training' in net.__code__.co_varnames): # 如果有is_training这个参数
+                net.eval()  # 评估模式, 这会关闭dropout
+                acc_sum += (net(X.to(device)).argmax(dim=1) ==
+                            y.to(device)).float().sum().cpu().item()
+                net.train()  # 改回训练模式
+            else:  # 自定义的模型, 3.13节之后不会用到, 不考虑GPU
+                if('is_training' in net.__code__.co_varnames):  # 如果有is_training这个参数
                     # 将is_training设置成False
-                    acc_sum += (net(X, is_training=False).argmax(dim=1) == y).float().sum().item()
+                    acc_sum += (net(X, is_training=False).argmax(dim=1)
+                                == y).float().sum().item()
                 else:
                     acc_sum += (net(X).argmax(dim=1) == y).float().sum().item()
             n += y.shape[0]
     return acc_sum / n
+
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -159,16 +180,42 @@ for X, y in train_iter:
 embed_size, num_hiddens, num_layers = 100, 100, 2
 net = BiRNN(vocab, embed_size, num_hiddens, num_layers)
 
-glove_vocab = Vocab.GloVe(name='6B', dim=100)
+if args.resume is not None:
+    print('Use checkpoint:', args.resume)
+    cp = torch.load(args.resume, map_location=device)
+    net.load_state_dict(cp)
+else:
+    glove_vocab = Vocab.GloVe(name='6B', dim=100)
 
-net.embedding.weight.data.copy_(load_pretrained_embedding(vocab.itos, glove_vocab))
-net.embedding.weight.requires_grad = False # 直接加载预训练好的, 所以不需要更新它
+    net.embedding.weight.data.copy_(
+        load_pretrained_embedding(vocab.itos, glove_vocab))
+    net.embedding.weight.requires_grad = False  # 直接加载预训练好的, 所以不需要更新它
+
+if not args.test_only:
+    lr, num_epochs = 0.01, 5
+    optimizer = torch.optim.Adam(
+        filter(lambda p: p.requires_grad, net.parameters()), lr=lr)
+    loss = nn.CrossEntropyLoss()
+
+    train(train_iter, test_iter, net, loss, optimizer, device, num_epochs)
+
+if args.experiment_path is not None:
+    torch.save(
+        net.state_dict(),
+        args.experiment_path
+    )
+
+print(['this', 'movie', 'is', 'so', 'great'], ':', predict_sentiment(
+    net, vocab, ['this', 'movie', 'is', 'so', 'great']))
+print(['this', 'movie', 'is', 'so', 'bad'], ':', predict_sentiment(
+    net, vocab, ['this', 'movie', 'is', 'so', 'bad']))
 
 
-lr, num_epochs = 0.01, 5
-optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=lr)
-loss = nn.CrossEntropyLoss()
-train(train_iter, test_iter, net, loss, optimizer, device, num_epochs)
+def print_prediction(text):
+    print(text, ':', predict_sentiment(net, vocab, text))
 
-print(['this', 'movie', 'is', 'so', 'great'], ':', predict_sentiment(net, vocab, ['this', 'movie', 'is', 'so', 'great']))
-print(['this', 'movie', 'is', 'so', 'bad'], ':', predict_sentiment(net, vocab, ['this', 'movie', 'is', 'so', 'bad']))
+
+text = 'this movie sucks'.split()
+print_prediction(text)
+text = 'this movie is a piece of shit'.split()
+print_prediction(text)
