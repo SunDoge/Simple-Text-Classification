@@ -213,15 +213,13 @@ if not args.test_only:
     loss = nn.CrossEntropyLoss()
 
     train(train_iter, test_iter, net, loss, optimizer, device, num_epochs)
-
-summary_writer.close()
-
-os.makedirs(args.experiment_dir, exist_ok=True)
-torch.save(
-    net.state_dict(),
-    args.experiment_dir / 'checkpoint.pt'
-)
-print('Save checkpoint:', args.experiment_dir)
+else:
+    os.makedirs(args.experiment_dir, exist_ok=True)
+    torch.save(
+        net.state_dict(),
+        args.experiment_dir / 'checkpoint.pt'
+    )
+    print('Save checkpoint:', args.experiment_dir)
 
 print(['this', 'movie', 'is', 'so', 'great'], ':', predict_sentiment(
     net, vocab, ['this', 'movie', 'is', 'so', 'great']))
@@ -241,3 +239,6 @@ text = 'this movie is a piece of shit'.split()
 print_prediction(text)
 text = 'bite my shiny metal ass'.split()
 print_prediction(text)
+
+
+summary_writer.close()
