@@ -203,7 +203,7 @@ if args.experiment_path is not None:
     os.makedirs(args.experiment_path, exist_ok=True)
     torch.save(
         net.state_dict(),
-        args.experiment_path
+        os.path.join(args.experiment_path, 'checkpoint.pt')
     )
     print('Save checkpoint:', args.experiment_path)
 
