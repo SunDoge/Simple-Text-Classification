@@ -213,7 +213,7 @@ if not args.test_only:
     loss = nn.CrossEntropyLoss()
 
     train(train_iter, test_iter, net, loss, optimizer, device, num_epochs)
-else:
+
     os.makedirs(args.experiment_dir, exist_ok=True)
     torch.save(
         net.state_dict(),
