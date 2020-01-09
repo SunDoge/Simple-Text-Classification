@@ -171,4 +171,4 @@ loss = nn.CrossEntropyLoss()
 train(train_iter, test_iter, net, loss, optimizer, device, num_epochs)
 
 print(['this', 'movie', 'is', 'so', 'great'], ':', predict_sentiment(net, vocab, ['this', 'movie', 'is', 'so', 'great']))
-print(['this', 'movie', 'is', 'so', 'great'], ':', predict_sentiment(net, vocab, ['this', 'movie', 'is', 'so', 'bad']))
+print(['this', 'movie', 'is', 'so', 'bad'], ':', predict_sentiment(net, vocab, ['this', 'movie', 'is', 'so', 'bad']))
