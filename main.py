@@ -26,7 +26,7 @@ args.experiment_dir = Path(args.experiment_dir)
 
 # DATA_ROOT = "\\S1\\CSCL\\tangss\\Datasets"
 DATA_ROOT = 'aclImdb'
-summary_writer = SummaryWriter(log_dir=args.experiment_path)
+summary_writer = SummaryWriter(log_dir=args.experiment_dir)
 
 
 def read_imdb(folder='train', data_root=DATA_ROOT):  # 本函数已保存在d2lzh_pytorch包中方便以后使用
