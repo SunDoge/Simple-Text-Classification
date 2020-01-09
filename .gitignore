@@ -1,0 +1,4 @@
+aclImdb/
+*.gz
+*.zst
+.vector_cache/

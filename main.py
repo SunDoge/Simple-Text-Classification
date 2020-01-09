@@ -6,15 +6,16 @@ import torch
 from torch import nn
 import torchtext.vocab as Vocab
 import torch.utils.data as Data
-from tqdm import tqdm
+from tqdm import tqdm, trange
 import time
 
 import sys
 sys.path.append("..")
 
-DATA_ROOT = "\\S1\\CSCL\\tangss\\Datasets"
+# DATA_ROOT = "\\S1\\CSCL\\tangss\\Datasets"
+DATA_ROOT = 'aclImdb'
 
-def read_imdb(folder='train', data_root="S1\\CSCL\\tangss\\Datasets\\aclImdb"):  # 本函数已保存在d2lzh_pytorch包中方便以后使用
+def read_imdb(folder='train', data_root=DATA_ROOT):  # 本函数已保存在d2lzh_pytorch包中方便以后使用
     data = []
     for label in ['pos', 'neg']:
         folder_name = os.path.join(data_root, folder, label)
@@ -101,9 +102,9 @@ def train(train_iter, test_iter, net, loss, optimizer, device, num_epochs):
     net = net.to(device)
     print("training on ", device)
     batch_count = 0
-    for epoch in range(num_epochs):
+    for epoch in trange(num_epochs):
         train_l_sum, train_acc_sum, n, start = 0.0, 0.0, 0, time.time()
-        for X, y in train_iter:
+        for X, y in tqdm(train_iter):
             X = X.to(device)
             y = y.to(device)
             y_hat = net(X)
@@ -125,7 +126,7 @@ def evaluate_accuracy(data_iter, net, device=None):
         device = list(net.parameters())[0].device
     acc_sum, n = 0.0, 0
     with torch.no_grad():
-        for X, y in data_iter:
+        for X, y in tqdm(data_iter):
             if isinstance(net, torch.nn.Module):
                 net.eval() # 评估模式, 这会关闭dropout
                 acc_sum += (net(X.to(device)).argmax(dim=1) == y.to(device)).float().sum().cpu().item()
