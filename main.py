@@ -200,11 +200,12 @@ if not args.test_only:
     train(train_iter, test_iter, net, loss, optimizer, device, num_epochs)
 
 if args.experiment_path is not None:
-    os.makedirs(args.experiment_path, exists_ok=True)
+    os.makedirs(args.experiment_path, exist_ok=True)
     torch.save(
         net.state_dict(),
         args.experiment_path
     )
+    print('Save checkpoint:', args.experiment_path)
 
 print(['this', 'movie', 'is', 'so', 'great'], ':', predict_sentiment(
     net, vocab, ['this', 'movie', 'is', 'so', 'great']))
