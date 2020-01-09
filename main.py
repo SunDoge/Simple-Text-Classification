@@ -9,18 +9,24 @@ import torch.utils.data as Data
 from tqdm import tqdm, trange
 import time
 import argparse
+from torch.utils.tensorboard import SummaryWriter
+from pathlib import Path
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-e', '--experiment-path')
+parser.add_argument('-e', '--experiment-dir',
+                    default=time.strftime('%Y%m%d_%H%M%S', time.localtime()))
 parser.add_argument('-r', '--resume')
 parser.add_argument('-t', '--test-only', action='store_true')
 args = parser.parse_args()
+
+args.experiment_dir = Path(args.experiment_dir)
 
 # import sys
 # sys.path.append("..")
 
 # DATA_ROOT = "\\S1\\CSCL\\tangss\\Datasets"
 DATA_ROOT = 'aclImdb'
+summary_writer = SummaryWriter(log_dir=args.experiment_path)
 
 
 def read_imdb(folder='train', data_root=DATA_ROOT):  # 本函数已保存在d2lzh_pytorch包中方便以后使用
@@ -136,6 +142,15 @@ def train(train_iter, test_iter, net, loss, optimizer, device, num_epochs):
         test_acc = evaluate_accuracy(test_iter, net)
         print('epoch %d, loss %.4f, train acc %.3f, test acc %.3f, time %.1f sec'
               % (epoch + 1, train_l_sum / batch_count, train_acc_sum / n, test_acc, time.time() - start))
+        summary_writer.add_scalar(
+            'train/loss', train_l_sum / batch_count, epoch
+        )
+        summary_writer.add_scalar(
+            'train/acc', train_acc_sum / n,
+        )
+        summary_writer.add_scalar(
+            'test/acc', test_acc
+        )
 
 
 def evaluate_accuracy(data_iter, net, device=None):
@@ -199,13 +214,14 @@ if not args.test_only:
 
     train(train_iter, test_iter, net, loss, optimizer, device, num_epochs)
 
-if args.experiment_path is not None:
-    os.makedirs(args.experiment_path, exist_ok=True)
-    torch.save(
-        net.state_dict(),
-        os.path.join(args.experiment_path, 'checkpoint.pt')
-    )
-    print('Save checkpoint:', args.experiment_path)
+summary_writer.close()
+
+os.makedirs(args.experiment_dir, exist_ok=True)
+torch.save(
+    net.state_dict(),
+    os.path.join(args.experiment_path, 'checkpoint.pt')
+)
+print('Save checkpoint:', args.experiment_path)
 
 print(['this', 'movie', 'is', 'so', 'great'], ':', predict_sentiment(
     net, vocab, ['this', 'movie', 'is', 'so', 'great']))
@@ -217,7 +233,11 @@ def print_prediction(text):
     print(text, ':', predict_sentiment(net, vocab, text))
 
 
+text = ['bravo']
+print_prediction(text)
 text = 'this movie sucks'.split()
 print_prediction(text)
 text = 'this movie is a piece of shit'.split()
+print_prediction(text)
+text = 'bite my shiny metal ass'.split()
 print_prediction(text)
