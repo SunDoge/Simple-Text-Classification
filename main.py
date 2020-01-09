@@ -146,10 +146,10 @@ def train(train_iter, test_iter, net, loss, optimizer, device, num_epochs):
             'train/loss', train_l_sum / batch_count, epoch
         )
         summary_writer.add_scalar(
-            'train/acc', train_acc_sum / n,
+            'train/acc', train_acc_sum / n, epoch
         )
         summary_writer.add_scalar(
-            'test/acc', test_acc
+            'test/acc', test_acc, epoch
         )
 
 
