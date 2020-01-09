@@ -219,9 +219,9 @@ summary_writer.close()
 os.makedirs(args.experiment_dir, exist_ok=True)
 torch.save(
     net.state_dict(),
-    os.path.join(args.experiment_path, 'checkpoint.pt')
+    args.experiment_dir / 'checkpoint.pt'
 )
-print('Save checkpoint:', args.experiment_path)
+print('Save checkpoint:', args.experiment_dir)
 
 print(['this', 'movie', 'is', 'so', 'great'], ':', predict_sentiment(
     net, vocab, ['this', 'movie', 'is', 'so', 'great']))
